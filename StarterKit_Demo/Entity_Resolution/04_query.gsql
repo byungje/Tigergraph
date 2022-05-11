@@ -1,0 +1,113 @@
+USE GRAPH entity_resolution
+CREATE QUERY outputFile(/* Parameters here */) FOR GRAPH entity_resolution { 
+  
+	File f1("/tmp/video_genre.csv");
+	File f2("/tmp/video_keyword.csv");
+	File f3("/tmp/video.csv");
+	
+	f1.println("genre,video");
+	
+	Start (ANY) = {Genre.*};
+	
+	Start = select s from Start:s-(Has_Genre)-:t accum f1.println(s,t);
+	
+	f2.println("keyword,video");
+	
+	Start = {Keyword.*};
+	
+	Start = select s from Start:s-(Has_Keyword)-:t accum f2.println(s,t);
+	
+	
+	Start = {Video.*};
+	
+	f3.println("ID,runtime,title,release_date");
+	
+	Start = select s from Start:s where s.title != "" accum f3.println(s,s.runtime,s.title,s.release_date);
+}
+CREATE QUERY account_matching(vertex<Entity_Account> inputAcc, float threshold) FOR GRAPH entity_resolution { 
+	/*******************************************************
+	 * This query only detects and links for one account
+	 * To link the entire graph, run main_query instead
+	 * 
+	 * Example parameters: 
+	 *   Account : 407
+	 *   threshold : 0.6
+	 *******************************************************/
+	
+	SumAccum<float> @score;
+	
+	start = {inputAcc};
+	
+	attribtues = SELECT t FROM start-((Has_IP|Has_Email|Has_Last_Name|Has_Phone|Has_Address|Has_Device):e)-:t;
+	
+	related_accs = SELECT t FROM attribtues-((Has_IP|Has_Email|Has_Last_Name|Has_Phone|Has_Address|Has_Device):e)-:t
+	               WHERE t != inputAcc
+	               ACCUM CASE e.type
+	                       WHEN "Has_IP" THEN t.@score += 0.2
+	                       WHEN "Has_Email" THEN t.@score += 0.3
+	                       WHEN "Has_Last_Name" THEN t.@score += 0.3
+	                       WHEN "Has_Phone" THEN t.@score += 0.2
+	                       WHEN "Has_Address" THEN t.@score += 0.1
+	                       WHEN "Has_Device" THEN t.@score += 0.2
+	                     END
+	               POST-ACCUM 
+	                 CASE WHEN t.@score > threshold THEN
+	                   INSERT INTO Same_Owner VALUES (inputAcc, t, t.@score) 
+	                 END;
+  PRINT related_accs;
+}
+CREATE QUERY get_account_interest(vertex<Entity_Account> inputAcc, int k) FOR GRAPH entity_resolution { 
+	/**********************************************************
+	 * Example parameters:
+	 *   Acount : 407
+	 *   k : 5
+	 **********************************************************/
+	
+  SetAccum<VERTEX<Entity_Account>> @@connected_accounts;
+	MapAccum<VERTEX, int> @map;
+	OrAccum @visited;
+	SumAccum<uint> @cnt;
+	ListAccum<EDGE> @@list;
+	
+	start = {inputAcc};
+	
+	WHILE start.size() > 0 DO
+	  start = SELECT t FROM start:s-(Same_Owner:e)-:t
+	          WHERE t.@visited == false
+	          POST-ACCUM @@connected_accounts += t, t.@visited = true;
+	END;
+	
+	start = @@connected_accounts;
+	
+	paly_event = SELECT t FROM start:s-(Has_Play_Event:e)-:t ACCUM @@list += e;
+	
+	videos = SELECT t FROM paly_event:s-(Play_Video:e)-:t ACCUM t.@cnt += 1, @@list += e;
+	
+	genreKeyw = SELECT t FROM videos:s-((Has_Genre|Has_Keyword):e)-:t 
+	            ACCUM t.@cnt += s.@cnt, @@list += e;
+	
+	videos = SELECT t from genreKeyw:s-((Has_Genre|Has_Keyword):e)-:t 
+	         WHERE t.@cnt == 0
+	         ACCUM t.@cnt += s.@cnt, t.@map += (s->s.@cnt)
+	         ORDER BY t.@cnt DESC LIMIT k;
+	
+	print videos;
+	
+	videos = SELECT s from videos:s-((Has_Genre|Has_Keyword):e)-:t
+	         ACCUM @@list += e;
+	
+	print @@list;
+}
+CREATE QUERY main_query(float threshold) FOR GRAPH entity_resolution { 
+	/*******************************************************
+	 * This query links all potential same-owner accounts
+	 *
+	 * Example parameter:
+	 *   threshold : 0.6
+	 *******************************************************/
+	all_acc = {Entity_Account.*};
+	rm = SELECT s FROM all_acc:s-(Same_Owner:e)-:t ACCUM delete(e);
+	all_acc = SELECT s FROM all_acc:s ACCUM account_matching(s,threshold);
+  PRINT all_acc;
+}
+

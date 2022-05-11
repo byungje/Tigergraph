@@ -1,0 +1,33 @@
+USE GRAPH entity_resolution
+CREATE LOADING JOB load_job_video_play FOR GRAPH entity_resolution {
+      DEFINE FILENAME v_video_play;
+      LOAD v_video_play TO VERTEX Video_Play_Event VALUES($0, $3, $4) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_video_play TO EDGE Play_Video VALUES($0, $2) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_video_play TO EDGE Has_Play_Event VALUES($1, $0) USING SEPARATOR=",", HEADER="true", EOL="\n";
+    }
+
+CREATE LOADING JOB load_job_video FOR GRAPH entity_resolution {
+      DEFINE FILENAME v_video;
+      LOAD v_video TO VERTEX Video VALUES($0, $1, $2, $3) USING SEPARATOR=",", HEADER="true", EOL="\n";
+    }
+
+CREATE LOADING JOB load_job_video_genre FOR GRAPH entity_resolution {
+      DEFINE FILENAME v_video_genre;
+      LOAD v_video_genre TO EDGE Has_Genre VALUES($1, $0) USING SEPARATOR=",", HEADER="true", EOL="\n";
+    }
+
+CREATE LOADING JOB load_job_video_keyword FOR GRAPH entity_resolution {
+      DEFINE FILENAME v_video_keyword;
+      LOAD v_video_keyword TO EDGE Has_Keyword VALUES($1, $0) USING SEPARATOR=",", HEADER="true", EOL="\n";
+    }
+
+CREATE LOADING JOB load_job_entity FOR GRAPH entity_resolution {
+      DEFINE FILENAME v_entity;
+      LOAD v_entity TO VERTEX Entity_Account VALUES($0, $1, $6, $2, $4, $8) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_entity TO EDGE Has_IP VALUES($0, $5) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_entity TO EDGE Has_Email VALUES($0, $3) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_entity TO EDGE Has_Last_Name VALUES($0, $2) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_entity TO EDGE Has_Phone VALUES($0, $7) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_entity TO EDGE Has_Address VALUES($0, $10) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_entity TO EDGE Has_Device VALUES($0, $9) USING SEPARATOR=",", HEADER="true", EOL="\n";
+    }
