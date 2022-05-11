@@ -1,0 +1,33 @@
+USE GRAPH faers
+
+CREATE LOADING JOB load_job_faer FOR GRAPH faers {
+      DEFINE FILENAME v_THER;
+      DEFINE FILENAME v_INDI;
+      DEFINE FILENAME v_REAC;
+      DEFINE FILENAME v_OUTC;
+      DEFINE FILENAME v_RPSR;
+      DEFINE FILENAME v_DRUG;
+      DEFINE FILENAME v_DEMO;
+
+      LOAD v_THER TO VERTEX Therapy VALUES(gsql_concat($0,$2), $2, $3, $4) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_INDI TO VERTEX Indication VALUES(gsql_concat($0,$2), $2, $3) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_REAC TO VERTEX Reaction VALUES($2, $2, $3) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_OUTC TO VERTEX Outcome VALUES($2, $2) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_RPSR TO VERTEX ReportSource VALUES($2, $2) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_DRUG TO VERTEX Drug VALUES($4, $4, $5) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_DRUG TO VERTEX DrugSequence VALUES(gsql_concat($0,$2), $2, $3, $4) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_DEMO TO VERTEX Patient VALUES($0, $13, $14, $15, $16, $18, $19, $22) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_DEMO TO VERTEX PharmaCompany VALUES($11, $11) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_DEMO TO VERTEX ReportedCase VALUES($0, $1, $2, $7, $11, $23, $24) USING SEPARATOR=",", HEADER="true", EOL="\n";
+	  
+      LOAD v_THER TO EDGE isUsedInTherapy VALUES(gsql_concat($0,$2), gsql_concat($0,$2)) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_INDI TO EDGE hasIndications VALUES(gsql_concat($0,$2), gsql_concat($0,$2)) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_REAC TO EDGE hasReactions VALUES($0, $2) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_OUTC TO EDGE hasOutcomes VALUES($0, $2) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_RPSR TO EDGE hasReportSources VALUES($0, $2) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_DRUG TO EDGE hasDrugs VALUES(gsql_concat($0,$2), $4) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_DRUG TO EDGE hasSequences VALUES($0, gsql_concat($0,$2)) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_DEMO TO EDGE hasPatient VALUES($0, $0) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD v_DEMO TO EDGE relatedTo VALUES($0, $11) USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+    }

@@ -1,0 +1,23 @@
+CREATE VERTEX ReportedCase(PRIMARY_ID primaryid UINT, caseid UINT, caseversion UINT, fda_dt DATETIME, mfr_sndr STRING, reporter_country STRING, occr_country STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE"
+CREATE VERTEX PharmaCompany(PRIMARY_ID primaryid STRING, mfr_sndr STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE"
+CREATE VERTEX DrugSequence(PRIMARY_ID sequence_id STRING, seqid UINT, role_cod STRING, drugname STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE"
+CREATE VERTEX Drug(PRIMARY_ID drug_id STRING, drugname STRING, prod_ai STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE"
+CREATE VERTEX Reaction(PRIMARY_ID reaction_id STRING, pt STRING, drug_rec_act STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE"
+CREATE VERTEX Outcome(PRIMARY_ID outcome_id STRING, outc_code STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE"
+CREATE VERTEX ReportSource(PRIMARY_ID reportsource_id STRING, rpsr_code STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE"
+CREATE VERTEX Patient(PRIMARY_ID primaryid UINT, age FLOAT, age_code STRING, age_grp STRING, sex STRING, weight FLOAT, wt_code STRING, occp_cod STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE"
+CREATE VERTEX Therapy(PRIMARY_ID therapy_id STRING, dsg_drug_seq UINT, start_date DATETIME, end_date DATETIME) WITH STATS="OUTDEGREE_BY_EDGETYPE"
+CREATE VERTEX Indication(PRIMARY_ID indication_id STRING, indi_drug_seq UINT, indi_pt STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE"
+CREATE VERTEX vertex_type_1(PRIMARY_ID id STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE"
+CREATE UNDIRECTED EDGE hasOutcomes(FROM ReportedCase, TO Outcome)
+CREATE UNDIRECTED EDGE hasReactions(FROM ReportedCase, TO Reaction)
+CREATE UNDIRECTED EDGE hasReportSources(FROM ReportedCase, TO ReportSource)
+CREATE UNDIRECTED EDGE hasPatient(FROM ReportedCase, TO Patient)
+CREATE UNDIRECTED EDGE hasSequences(FROM ReportedCase, TO DrugSequence)
+CREATE UNDIRECTED EDGE hasDrugs(FROM DrugSequence, TO Drug)
+CREATE UNDIRECTED EDGE isUsedInTherapy(FROM DrugSequence, TO Therapy)
+CREATE UNDIRECTED EDGE hasIndications(FROM DrugSequence, TO Indication)
+CREATE UNDIRECTED EDGE relatedTo(FROM ReportedCase, TO PharmaCompany)
+CREATE UNDIRECTED EDGE similarCaseTo(FROM ReportedCase, TO ReportedCase, wt FLOAT)
+
+CREATE GRAPH health_care(ReportedCase:v, PharmaCompany:v, DrugSequence:v, Drug:v, Reaction:v, Outcome:v, ReportSource:v, Patient:v, Therapy:v, Indication:v, vertex_type_1:v, hasOutcomes:e, hasReactions:e, hasReportSources:e, hasPatient:e, hasSequences:e, hasDrugs:e, isUsedInTherapy:e, hasIndications:e, relatedTo:e, similarCaseTo:e)
