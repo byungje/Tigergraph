@@ -1,6 +1,4 @@
 echo "data now : $(date +%Y)-$(date +%m)-$(date +%d) $(date +%H):$(date +%M):$(date +%S)"
-time = `date`
-echo $time
 
 ## PLEASE modify the line below to the directory where your raw file sits and remove the '#'
 export healthcare_data_dir=/home/tigergraph/01_health_care/healthcare_data/
@@ -21,6 +19,3 @@ v_DEMO=\"${healthcare_data_dir}/DEMO.csv\""
 
 
 echo "data now : $(date +%Y)-$(date +%m)-$(date +%d) $(date +%H):$(date +%M):$(date +%S)"
-time = `date`
-echo $time
-
