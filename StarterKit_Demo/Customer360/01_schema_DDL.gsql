@@ -24,5 +24,5 @@ CREATE DIRECTED EDGE comes_from_the(FROM Lead, TO Industry) WITH REVERSE_EDGE="r
 CREATE DIRECTED EDGE is_for_the(FROM Opportunity, TO Industry) WITH REVERSE_EDGE="reverse_is_for_the"
 
 
-CREATE GRAPH customer(Account:v, Campaign:v, Contact:v, Lead:v, CampaignMember:v, Opportunity:v, Industry:v, LeadSource:v, belongs_to:e, converted:e, is_active_as:e, is_part_of:e, Has_Role:e, Has:e, Is_Driven_By:e, is_connected_to:e, belongs_to_industry:e, created_by:e, is_from:e, comes_from:e, comes_from_the:e, is_for_the:e)
+CREATE GRAPH customer(Account, Campaign, Contact, Lead, CampaignMember, Opportunity, Industry, LeadSource, belongs_to, converted, is_active_as, is_part_of, Has_Role, Has, Is_Driven_By, is_connected_to, belongs_to_industry, created_by, is_from, comes_from, comes_from_the, is_for_the)
 
