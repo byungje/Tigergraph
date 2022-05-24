@@ -1,0 +1,105 @@
+USE GRAPH Fraud_Detection
+
+CREATE QUERY Common_Customers(vertex<merchant_account> Merchant1, vertex<merchant_account> Merchant2) FOR GRAPH MyGraph { 
+  OrAccum @visited;
+  SetAccum<edge> @@edgeSet;
+  Mer1 =  {Merchant1};
+  Mer2 =  {Merchant2};
+
+  /* Step 1 – Start graph Traversal from first merchant to find all associated payments. Use visited flag to remember payments visited. */
+  payments1 = select t
+              from Mer1:s -(reverse_receives_pmnt:e)-> payment:t
+              accum t.@visited += true;
+ 
+	//PRINT payments1;
+  /* Step 2 – For those payments, find all the linked customers. */
+  customer1 = select t
+              from payments1:s -(reverse_sends:e)-> user_account:t
+              accum t.@visited += true;
+
+  //PRINT customer1;
+	/* Step 3 Start graph traversal from second merchant to find all payments */
+  payments2 = select t
+              from Mer2:s -(reverse_receives_pmnt:e)-> payment:t
+              accum t.@visited += true;
+
+  //PRINT payments2;
+	/* Step 4 – Find common customers by starting from payments in Step 3 */    
+  common_customers = select t
+                     from payments2:s -(reverse_sends:e)-> user_account:t
+                     where t.@visited == true;
+   print common_customers;
+	
+  /* Step 5 – From common customers find all payments that have been visited in earlier steps. Collect the edges so they can be printed.*/    
+  payments = select t
+             from common_customers:s -(sends:e)-> payment:t
+             where t.@visited == true
+             accum @@edgeSet += e;
+  print payments;
+
+	/* Step 6 – From payments find associated merchants. Collect and print edges (payments – merchants) and merchants. */
+  merchant = select t
+             from payments:s -(receives_pmnt:e)-> merchant_account:t
+             accum @@edgeSet += e;
+	
+  print merchant;
+  print @@edgeSet;
+}
+
+CREATE QUERY Recipient_User_Fraudulent_Device() FOR GRAPH MyGraph SYNTAX v2 { 
+	/***********************************************************
+	 *  This query uses syntax v2.
+	 *  This query prints out the subgraphs of payments
+	 *  whose phone number is attached to the device previously
+	 *  involved in fraud along with the fraudulent device.
+	 **********************************************************/
+	
+	SetAccum<edge> @@edges;
+	
+  payments = {payment.*};
+
+	FraudulentRecipientDevice = 
+	 select device2
+	 from payments:p - (receives>:r2)- user_account:uact2 -(<sets_up:rset2)- user:usr2
+	-(authenticated_by_num>:edgenum2)- phone_number:phone2 -(<used_with:edgedevice2)- device:device2 
+	  where device2.trust_score < 0.1;
+
+	hop4 = select t from FraudulentRecipientDevice:s-(used_with>:e)-phone_number:t accum @@edges += e;
+	hop3 = select t from hop4:s-(<authenticated_by_num:e)-user:t accum @@edges += e;
+	hop2 = select t from hop3:s-(sets_up>:e)-user_account:t accum @@edges += e;
+	hop1 = select t from hop2:s-((<receives | sends>):e)-payment:t accum @@edges += e;
+	
+	print @@edges;
+	PRINT FraudulentRecipientDevice;
+	print hop1;
+}
+
+CREATE QUERY kHop_Flagged(Vertex input, int k) FOR GRAPH MyGraph { 
+	/***********************************************************
+	 *  This is a query using v1 syntax. 
+	 *  We start with a single vertex of one of these types:
+	 *  Account / Payment / User 
+	 *  and we want to find all the payment / device/ user
+	 *  vertices with a trust-score lower than 0.1.
+	 *  We also limit the number of total hops to k.
+	 *
+	 *  Sample Parameters:
+	 *      input = payment1
+	 *      k = 4 +
+	 **********************************************************/
+	
+  SetAccum<vertex> @@warnings;	
+	
+	Start (ANY) = {input};
+	
+	foreach i in range [1,k] do 
+	  Start = select t from Start:s-((authenticated_by_num | reverse_authenticated_by_num | sets_up | reverse_sets_up | authenticated_by_email | reverse_authenticated_by_email | used_with | reverse_used_with | associated_with | reverse_associated_with | sends | reverse_sends | receives | reverse_receives | user_account_bank | reverse_user_account_bank | merchant_account_device | reverse_merchant_account_device | receives_pmnt | reverse_receives_pmnt | sends_pmnt | reverse_sends_pmnt | merchant_account_bank | reverse_merchant_account_bank):e)-:t
+	          accum 
+	            if t.trust_score < 0.1 AND (t.type == "device" or t.type == "payment" or t.type == "user") then
+	              @@warnings += t
+              end;
+	end;
+
+	Flagged = @@warnings;
+	print Flagged;
+}
