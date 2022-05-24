@@ -1,0 +1,23 @@
+USE GRAPH AntiFraud
+
+CREATE LOADING JOB load_job_antifraud FOR GRAPH AntiFraud {
+      DEFINE FILENAME v_client;
+      DEFINE FILENAME v_userDevice;
+      DEFINE FILENAME v_client_referral;
+      DEFINE FILENAME v_device;
+      DEFINE FILENAME v_payment;
+      DEFINE FILENAME v_transaction;
+    
+
+      LOAD v_client TO VERTEX User VALUES($0, $1, $2, $3) USING SEPARATOR="\t", HEADER="true", EOL="\n";
+      LOAD v_device TO VERTEX Device_Token VALUES($0, $1, $2, $3, $4, $5, $6, $7, $8, $10) USING SEPARATOR="\t", HEADER="true", EOL="\n";
+      LOAD v_payment TO VERTEX Payment_Instrument VALUES($1, $2, $3, _, $5, $7, $10) USING SEPARATOR="\t", HEADER="true", EOL="\n";
+      LOAD v_transaction TO VERTEX transaction VALUES($0, $4, $3) USING SEPARATOR="\t", HEADER="true", EOL="\n";
+      
+      LOAD v_userDevice TO EDGE User_to_Device VALUES($0, $1) USING SEPARATOR="\t", HEADER="true", EOL="\n";
+      LOAD v_client_referral TO EDGE User_Refer_User VALUES($1, $0) USING SEPARATOR="\t", HEADER="true", EOL="\n";
+      LOAD v_payment TO EDGE User_to_Payment VALUES($0, $1) USING SEPARATOR="\t", HEADER="true", EOL="\n";
+      LOAD v_transaction TO EDGE User_Transfer_Transaction VALUES($2, $0) USING SEPARATOR="\t", HEADER="true", EOL="\n";
+      LOAD v_transaction TO EDGE User_Receive_Transaction VALUES($1, $0) USING SEPARATOR="\t", HEADER="true", EOL="\n";
+    
+	}
