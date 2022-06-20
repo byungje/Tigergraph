@@ -1,11 +1,12 @@
-CREATE VERTEX transaction(PRIMARY_ID id STRING, ts UINT, amount FLOAT) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false"
-CREATE VERTEX User(PRIMARY_ID id STRING, signupEpoch UINT, mobile STRING, trust_score FLOAT) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false"
-CREATE VERTEX Device_Token(PRIMARY_ID id STRING, is_banned BOOL, os_name STRING, os_version STRING, model STRING, carrier STRING, is_rooted BOOL, is_emulator BOOL, device_name STRING, trust_score FLOAT) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false"
-CREATE VERTEX Payment_Instrument(PRIMARY_ID id STRING, token_handle STRING, token_type STRING, card_issuing_country_iso2 STRING, card_issuing_bank STRING, card_bin STRING, trust_score FLOAT) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false"
-CREATE DIRECTED EDGE User_Transfer_Transaction(FROM User, TO transaction) WITH REVERSE_EDGE="User_Transfer_Transaction_Rev"
-CREATE UNDIRECTED EDGE User_to_Device(FROM User, TO Device_Token)
-CREATE UNDIRECTED EDGE User_to_Payment(FROM User, TO Payment_Instrument)
-CREATE DIRECTED EDGE User_Refer_User(FROM User, TO User) WITH REVERSE_EDGE="User_Referred_By_User"
-CREATE DIRECTED EDGE User_Receive_Transaction(FROM User, TO transaction) WITH REVERSE_EDGE="User_Receive_Transaction_Rev"
+//Creates Graph
+create vertex Output (primary_id transaction_hash_outid string, outid int, transaction_value int)
+create vertex Transaction (primary_id transaction_hash string, txn_size int, version_no int, txn_locktime int, is_coinbase bool)
+create vertex Block (primary_id curr_hash string, block_index int, merkle_root string, block_time datetime, block_version int, block_bits int)
+create vertex Address (primary_id address string)
+create directed edge output_to_address (from Output, to Address) with reverse_edge="address_to_output"
+create directed edge txn_output (from Transaction, to Output) with reverse_edge="output_origin_txn"
+create directed edge txn_input (from Output, to Transaction) with reverse_edge="txn_origin_input"
+create directed edge txn_to_block (from Transaction, to Block) with reverse_edge="block_to_txn"
+create directed edge chain (from Block, to Block) with reverse_edge="reverse_chain"
+create graph Block_Chain (Output, Transaction, Block, Address, output_to_address, txn_output, txn_input, txn_to_block, chain)
 
-CREATE GRAPH AntiFraud(transaction, User, Device_Token, Payment_Instrument, User_Transfer_Transaction, User_to_Device, User_to_Payment, User_Refer_User, User_Receive_Transaction)
